@@ -35,13 +35,16 @@ export const getMessage = async (req, res) => {
   try {
     const { id: userChatId } = req.params;
     const senderId = req.user._id;
-    const conversation = await Conversation.findOne({
-      participants: { $all: [userChatId, senderId] },
-    }).populate("messages");
+    const conversation =
+      await Conversation.findById(userChatId).populate("messages");
     if (!conversation) {
-      return res.status(200).json([]);
+      return res.status(404).json({
+        message: "No conversation found with this user",
+      });
     }
-    const messages = conversation.messages;
+    const messages = await Message.find({
+      _id: { $in: conversation.messages },
+    }).populate("senderId", "userName email avatar");
     res.status(200).json(messages);
   } catch (error) {
     console.log(error);
